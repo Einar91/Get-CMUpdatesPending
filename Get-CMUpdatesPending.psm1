@@ -144,9 +144,6 @@ function Get-CMUpdatesPending{
             
         } #Function
 
-        #Check if we can use pending_update_log function or use verbose
-        $LogVariable = Get-Command pending_update_log -ErrorAction SilentlyContinue
-
         #Set variable for incrementing foreach number
         [int]$number = 0
 
@@ -155,13 +152,8 @@ function Get-CMUpdatesPending{
     PROCESS{
         foreach ($computer in $ComputerName){
             #Add additional information to get a sens of progress status
-            $number = $number+1
-            if($LogVariable){
-                pending_update_log -cat "space"
-                pending_update_log -cat "Info" -t "***** $computer is object $number of $($ComputerName.Count)" -fgc "white"
-            } else{           
-                Write-Verbose "***** $computer is object $number of $($ComputerName.Count)"
-            } #else
+            $number = $number+1          
+            Write-Verbose "***** $computer is object $number of $($ComputerName.Count)"
             
             #Set our prefered start protocol, if this is changed it will break the foreach computer+do loop.
             $Protocol = 'Wsman'
@@ -176,11 +168,8 @@ function Get-CMUpdatesPending{
                     } #else
                 
                     #Open session to computer
-                    if($LogVariable){
-                        pending_update_log -cat "Info" -t "Connecting to $computer over $Protocol."
-                    } else{
-                        Write-Verbose "Connecting to $computer over $Protocol."
-                    } # else
+                    Write-Verbose "Connecting to $computer over $Protocol."
+
                     $session = New-CimSession -ComputerName $computer -SessionOption $option -ErrorAction Stop -ErrorVariable ErrorSession
 
                     #Query data
@@ -190,90 +179,61 @@ function Get-CMUpdatesPending{
                                                 'ErrorAction'='Stop'
                                                 'ErrorVariable'='ErrorInstance'}
                     
-                    if($LogVariable){
-                        pending_update_log -cat "Info" -t "Querying data from $computer."
-                    } else {
-                        Write-Verbose "Querying data from $computer."
-                    } #else
+                    Write-Verbose "Querying data from $computer."
                     $AllUpdates = Get-CimInstance @ciminstance_parameters
                 
                     #Create an object for each update found and convert evaluationstatevalue to readable result
                     if($AllUpdates){
-                        if($LogVariable){
-                            pending_update_log -cat "Info" -t "Data retrieved from $computer, formatting to readable output."
-                        } else {
-                            Write-Verbose "Data retrieved from $computer, formatting to readable output."
-                        } # else
+                        Write-Verbose "Data retrieved from $computer, formatting to readable output."
                         foreach($update in $AllUpdates){
                             $JobState = Convert-EvaluationStateValueToName -ResultCode $update.EvaluationState
                             $properties = @{'ComputerName'=$computer
                                             'JobState'=$JobState
                                             'Name'=$update.name}
                             $obj = New-Object -TypeName psobject -Property $properties
+                            $obj
 
-                            #Output object
-                            $obj | select ComputerName,JobState,Name
-                    
                         } #Foreach Update
                         
+                        #Stop the loop when we got our object out
                         $Protocol = 'Stop'
                     } #If allupdates
                 
                     #If we find no updates, output an object with information
                     ElseIf(!$AllUpdates){
-                        if($LogVariable){
-                            pending_update_log -cat "Info" -t "Checking if there was no updates with compliance = 0"
-                        } else{
-                            Write-Verbose "Checking if there was no updates with compliance = 0"
-                        } #else
+                        Write-Verbose "Checking if there was no updates with compliance = 0"
                     
                         $properties = @{'ComputerName'=$computer
                                         'JobState'='Empty'
                                         'Name'="No updates found"}
                         $obj = New-Object -TypeName psobject -Property $properties
+                        $obj
 
-                        #Output object
-                        $obj | select ComputerName,JobState,Name
-                        
+                        #Stop the loop when we got our object out
                         $Protocol = 'Stop'
                     } #ElseIf
 
-                    if($LogVariable){
-                        pending_update_log -cat "Info" -t "Closing connection to $computer"
-                    } else{
-                        Write-Verbose "Closing connection to $computer"
-                    } #else
+                    Write-Verbose "Closing connection to $computer"
                     $session | Remove-CimSession                   
 
-                    #If we have succesfully connected with dcom, stop the do loop.
+                    #If we have succesfully connected with dcom, but something failed with retriving data, stop the do loop.
                     if($Protocol -eq 'Dcom'){$Protocol = 'Stop'}
                 } #Try
                 # Try dcom if Wsman failes, then stop the do loop if Dcom failes
                 Catch{
                     Switch ($Protocol){
-                        'Wsman' {$Protocol = 'Dcom'
+                        'Wsman' {
+                            $Protocol = 'Dcom'
                             if($ErrorSession){
-                                if($LogVariable){
-                                    pending_update_log -cat "Error" -t "Failed to connect to $computer over Wsman." -fgc 'yellow'
-                                } else{
-                                    Write-Warning "Failed to connect to $computer over Wsman." 
-                                } #else
+                                Write-Warning "Failed to connect to $computer over Wsman." 
                             } elseif($ErrorInstance){
-                                if($LogVariable){
-                                    pending_update_log -cat "Error" -t "Failed to query $computer over Wsman." -fgc 'yellow'
-                                } else{
-                                    Write-Warning "Failed to query $computer over Wsman."
+                                Write-Warning "Failed to query $computer over Wsman."
                                 } #else
-                            } #elseif
+                        } #Wsman
 
-                        }
                         'Dcom' {
                             $Protocol = 'Stop'
-                            if($LogVariable){
-                                pending_update_log -cat "Error" -t "Failed to connect to $computer over Dcom." -fgc 'yellow'
-                            } else{
-                                Write-Warning "Failed to connect to $computer over Dcom."
-                            }
+                            Write-Warning "Failed to connect to $computer over Dcom."
                             
                             $ErrorProperties = @{'ComputerName'=$computer
                                         'JobState'=$null
@@ -285,17 +245,13 @@ function Get-CMUpdatesPending{
                             $ErrorObj
 
                             if($PSBoundParameters.ContainsKey('ErrorLogFilePath')){
-                                if($LogVariable){
-                                    pending_update_log -cat "Information" -t "Logging error to $ErrorLogFilePath"
-                                } else{
-                                    Write-Verbose "Logging error to $ErrorLogFilePath"
-                                } #else
+                                Write-Verbose "Logging error to $ErrorLogFilePath"
+                                } #if
                                 Write-Output "$computer : $ErrorSession" | Out-File $ErrorLogFilePath -Append
                                 Write-Output "$computer : $ErrorInstance" | Out-File $ErrorLogFilePath -Append
-                            }
                         } #Dcom
-                    } #Switch                    
-                } #Catch
+                    } #Switch       
+                } #Catch             
             } Until($Protocol -eq 'Stop')
         } #Foreach Computer
     } #Process
