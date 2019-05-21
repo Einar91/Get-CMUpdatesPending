@@ -31,7 +31,7 @@ function Get-CMUpdatesPending{
         [string[]]$ComputerName,
 
         [Parameter(Mandatory=$False)]
-        [string]$ErrorLogFilePath
+        [string]$ErrorLogFilePath = 'C:\Temp\CMUpdatesPendingErrorLog.txt'
     )
 
     BEGIN{
@@ -247,8 +247,8 @@ function Get-CMUpdatesPending{
 
                             if($PSBoundParameters.ContainsKey('ErrorLogFilePath')){
                                 Write-Verbose "Logging error to $ErrorLogFilePath"
-                                Write-Output "$computer : $ErrorSession" | Out-File $ErrorLogFilePath -Append
-                                Write-Output "$computer : $ErrorInstance" | Out-File $ErrorLogFilePath -Append    
+                                Write-Output "$computer : $ErrorSession" | Out-File $ErrorLogFilePath
+                                Write-Output "$computer : $ErrorInstance" | Out-File $ErrorLogFilePath
                             } #if
                         } #Dcom
                     } #Switch       
