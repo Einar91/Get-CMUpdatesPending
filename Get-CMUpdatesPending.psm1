@@ -1,24 +1,24 @@
 function Get-CMUpdatesPending{
     <#
     .SYNOPSIS
-    Get-CybCMUpdatesPending will query one or more computers for pending updates via Configuration Manager.
+    Get-CMUpdatesPending will query one or more computers for pending updates via Configuration Manager.
     .DESCRIPTION
-    Get-CybCMUpdatesPending uses Get-CimInstance to query the CCM_SoftwareUpdate class for pending updates. It opens a CimSession and will first try to query over Wsman protocol and then over Dcom protocol if Wsman fails.
+    Get-CMUpdatesPending uses Get-CimInstance to query the CCM_SoftwareUpdate class for pending updates. It opens a CimSession and will first try to query over Wsman protocol and then over Dcom protocol if Wsman fails.
     .PARAMETER ComputerName
     Computer or computers to query.
     .PARAMETER ErrorLogFilePath
     Full path to where an optional error log should be stored.
     .EXAMPLE
-    PS> Get-CybCMUpdatesPending -ComputerName SRV1
+    PS> Get-CMUpdatesPending -ComputerName SRV1
     Query one computer and only show/return the updates (if any).
     .EXAMPLE
-    PS> Get-CybCMUpdatesPending -ComputerName SRV1 -ErrorLogFilePath C:\Temp\Errorlog.txt -Verbose
+    PS> Get-CMUpdatesPending -ComputerName SRV1 -ErrorLogFilePath C:\Temp\Errorlog.txt -Verbose
     Query one computer and store an error log under c:\temp\errorlog.txt with connection errors(if any). Using the '-verbose' to get a progression update from the script.
     .EXAMPLE
-    PS> Get-CybCMUpdatesPending -ComputerName SRV1,SRV2,SRV3 -ErrorLogFilePath C:\Temp\Errorlog.txt -Verbose
+    PS> Get-CMUpdatesPending -ComputerName SRV1,SRV2,SRV3 -ErrorLogFilePath C:\Temp\Errorlog.txt -Verbose
     Query three computer and store an error log under c:\temp\errorlog.txt with connection errors(if any). Using the '-verbose' to get a progression update from the script.
     .EXAMPLE
-    PS> Get-CybCMUpdatesPending -ComputerName (Get-Content C:\Temp\Servers.txt) -ErrorLogFilePath C:\Temp\Errorlog.txt -Verbose
+    PS> Get-CMUpdatesPending -ComputerName (Get-Content C:\Temp\Servers.txt) -ErrorLogFilePath C:\Temp\Errorlog.txt -Verbose
     Using Get-Content to query a list of computers from a .txt file.
     .NOTES
     #>
